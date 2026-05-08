@@ -1,0 +1,8 @@
+node_modules/
+.env
+.env.local
+ngrok.exe
+.netlify/
+dist/
+build/
+.DS_Store

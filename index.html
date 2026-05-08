@@ -113,7 +113,11 @@
 
     function sendLocation(lat, lng, accuracy){
 
-      fetch("http://localhost:3000/location", {
+      const apiUrl = window.location.hostname === 'localhost' 
+        ? 'http://localhost:3000/location'
+        : `${window.location.origin}/.netlify/functions/location`;
+
+      fetch(apiUrl, {
 
         method: "POST",
 
