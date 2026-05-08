@@ -132,29 +132,3 @@ app.listen(PORT, () => {
     console.log("⚠ Supabase not configured (set SUPABASE_URL and SUPABASE_ANON_KEY)");
   }
 });
-
-  const entry = {
-    lat,
-    lng,
-    accuracy,
-    timestamp: new Date().toISOString(),
-  };
-
-  try {
-    saveLocation(entry);
-    return res.json({
-      success: true,
-      message: "Location saved successfully.",
-      data: entry,
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to save location.",
-    });
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
