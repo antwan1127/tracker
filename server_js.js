@@ -1,72 +1,77 @@
-const http = require("http");
+const express = require("express");
+const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
 
+const app = express();
 const PORT = process.env.PORT || 3000;
-const locations = [];
 
-const server = http.createServer((req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+app.use(cors());
+app.use(express.json());
 
-  if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    res.end();
-    return;
+const DATA_FILE = path.join(__dirname, "locations.json");
+
+function saveLocation(entry) {
+  let data = [];
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      data = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+    }
+  } catch (err) {
+    data = [];
   }
 
-  // ── POST /location → receive location from victim ──
-  if (req.method === "POST" && req.url === "/location") {
-    let body = "";
-    req.on("data", chunk => (body += chunk));
-    req.on("end", () => {
-      try {
-        const data = JSON.parse(body);
-        const entry = {
-          lat: data.lat,
-          lng: data.lng,
-          accuracy: data.accuracy,
-          time: new Date().toLocaleString(),
-        };
-        locations.push(entry);
+  data.push(entry);
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+}
 
-        console.log("\n🎯 NEW LOCATION CAPTURED:");
-        console.log(`   Lat:      ${entry.lat}`);
-        console.log(`   Lng:      ${entry.lng}`);
-        console.log(`   Accuracy: ±${entry.accuracy}m`);
-        console.log(`   Time:     ${entry.time}`);
-        console.log(`   Maps:     https://www.google.com/maps?q=${entry.lat},${entry.lng}\n`);
+app.get("/", (req, res) => {
+  res.send("Location API is running.");
+});
 
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ status: "ok" }));
-      } catch {
-        res.writeHead(400);
-        res.end("Bad request");
-      }
+app.post("/location", (req, res) => {
+  const { lat, lng, accuracy, consent } = req.body;
+
+  if (consent !== true) {
+    return res.status(400).json({
+      success: false,
+      message: "Consent is required before storing location data.",
     });
-    return;
   }
 
-  // ── GET /results → see all captured locations as JSON ──
-  if (req.method === "GET" && req.url === "/results") {
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify(locations, null, 2));
-    return;
+  if (
+    typeof lat !== "number" ||
+    typeof lng !== "number" ||
+    typeof accuracy !== "number"
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid location data.",
+    });
   }
 
-  // ── Serve index.html for everything else ──
-  const filePath = path.join(__dirname, "index.html");
-  if (fs.existsSync(filePath)) {
-    res.writeHead(200, { "Content-Type": "text/html" });
-    fs.createReadStream(filePath).pipe(res);
-  } else {
-    res.writeHead(404);
-    res.end("index.html not found");
+  const entry = {
+    lat,
+    lng,
+    accuracy,
+    timestamp: new Date().toISOString(),
+  };
+
+  try {
+    saveLocation(entry);
+    return res.json({
+      success: true,
+      message: "Location saved successfully.",
+      data: entry,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to save location.",
+    });
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
-  console.log(`📋 View captured locations: http://localhost:${PORT}/results\n`);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
