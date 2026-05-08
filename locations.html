@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Location Tracker - Admin Panel</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #1e1b4b, #312e81);
+      color: white;
+      min-height: 100vh;
+    }
+
+    .login-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .login-card {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+
+    .login-card h1 {
+      margin-bottom: 30px;
+      font-size: 1.8rem;
+    }
+
+    .password-input {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .password-input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      transition: 0.2s;
+    }
+
+    .btn:hover {
+      transform: scale(1.03);
+    }
+
+    .error {
+      color: #ff6b6b;
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+
+    .main-container {
+      display: none;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+    }
+
+    .header h1 {
+      font-size: 1.8rem;
+    }
+
+    .logout-btn {
+      padding: 10px 20px;
+      background: #ff6b6b;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .logout-btn:hover {
+      background: #ff5252;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    #map {
+      width: 100%;
+      height: 600px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    .table-container {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background: rgba(99, 102, 241, 0.3);
+      padding: 15px;
+      text-align: left;
+      font-weight: bold;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    td {
+      padding: 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    tr:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .stat-card .number {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #6366f1;
+    }
+
+    .stat-card .label {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.7);
+      margin-top: 5px;
+    }
+
+    .empty-message {
+      text-align: center;
+      padding: 40px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div class="login-container" id="loginContainer">
+    <div class="login-card">
+      <h1>🔒 Admin Panel</h1>
+      <input 
+        type="password" 
+        id="passwordInput" 
+        class="password-input" 
+        placeholder="Enter password"
+        onkeypress="handleKeyPress(event)"
+      />
+      <button class="btn" onclick="checkPassword()">Login</button>
+      <div class="error" id="error"></div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-container" id="mainContainer">
+    <div class="header">
+      <h1>📍 Location Tracker</h1>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="number" id="totalLocations">0</div>
+        <div class="label">Total Locations</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="lastLocation">-</div>
+        <div class="label">Last Location</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('map')">🗺️ Map View</button>
+      <button class="tab-btn" onclick="showTab('table')">📋 Table View</button>
+    </div>
+
+    <div id="map" class="tab-content active"></div>
+
+    <div class="tab-content" id="tableContent">
+      <div class="table-container">
+        <table id="locationsTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Latitude</th>
+              <th>Longitude</th>
+              <th>Accuracy (m)</th>
+              <th>Date & Time</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+          </tbody>
+        </table>
+        <div class="empty-message" id="emptyMessage">No locations saved yet</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PASSWORD = "1234";
+    let map = null;
+    let markers = [];
+    let allLocations = [];
+
+    function handleKeyPress(event) {
+      if (event.key === "Enter") {
+        checkPassword();
+      }
+    }
+
+    function checkPassword() {
+      const password = document.getElementById("passwordInput").value;
+      const error = document.getElementById("error");
+
+      if (password === PASSWORD) {
+        localStorage.setItem("adminLoggedIn", "true");
+        document.getElementById("loginContainer").style.display = "none";
+        document.getElementById("mainContainer").style.display = "block";
+        loadLocations();
+      } else {
+        error.textContent = "❌ Incorrect password";
+        document.getElementById("passwordInput").value = "";
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("adminLoggedIn");
+      document.getElementById("loginContainer").style.display = "flex";
+      document.getElementById("mainContainer").style.display = "none";
+      document.getElementById("passwordInput").value = "";
+      document.getElementById("error").textContent = "";
+    }
+
+    function showTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll(".tab-content").forEach(tab => {
+        tab.classList.remove("active");
+      });
+
+      // Remove active class from all buttons
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.remove("active");
+      });
+
+      // Show selected tab
+      if (tabName === "map") {
+        document.getElementById("map").classList.add("active");
+        document.querySelectorAll(".tab-btn")[0].classList.add("active");
+        if (map) {
+          setTimeout(() => map.invalidateSize(), 0);
+        }
+      } else {
+        document.getElementById("tableContent").classList.add("active");
+        document.querySelectorAll(".tab-btn")[1].classList.add("active");
+      }
+    }
+
+    async function loadLocations() {
+      try {
+        // Fetch from Supabase via Netlify function
+        const apiUrl = window.location.hostname === "localhost"
+          ? "http://localhost:3000/locations"
+          : `${window.location.origin}/.netlify/functions/get-locations`;
+
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          allLocations = data.data;
+          updateStats();
+          updateTable();
+          initMap();
+        }
+      } catch (error) {
+        console.error("Error loading locations:", error);
+      }
+    }
+
+    function updateStats() {
+      document.getElementById("totalLocations").textContent = allLocations.length;
+
+      if (allLocations.length > 0) {
+        const lastLoc = allLocations[allLocations.length - 1];
+        const date = new Date(lastLoc.created_at);
+        document.getElementById("lastLocation").textContent = date.toLocaleTimeString();
+      }
+    }
+
+    function updateTable() {
+      const tbody = document.getElementById("tableBody");
+      const emptyMsg = document.getElementById("emptyMessage");
+
+      if (allLocations.length === 0) {
+        tbody.innerHTML = "";
+        emptyMsg.style.display = "block";
+        return;
+      }
+
+      emptyMsg.style.display = "none";
+      tbody.innerHTML = allLocations
+        .map((loc, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${parseFloat(loc.latitude).toFixed(6)}</td>
+            <td>${parseFloat(loc.longitude).toFixed(6)}</td>
+            <td>${parseFloat(loc.accuracy).toFixed(2)}</td>
+            <td>${new Date(loc.created_at).toLocaleString()}</td>
+          </tr>
+        `)
+        .join("");
+    }
+
+    function initMap() {
+      // Clear existing markers
+      markers.forEach(marker => marker.remove());
+      markers = [];
+
+      // Initialize map if not already done
+      if (!map) {
+        map = L.map("map").setView([30.0444, 31.2357], 10);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap contributors",
+          maxZoom: 19,
+        }).addTo(map);
+      }
+
+      if (allLocations.length === 0) {
+        return;
+      }
+
+      // Add markers for each location
+      allLocations.forEach((loc, index) => {
+        const marker = L.circleMarker(
+          [loc.latitude, loc.longitude],
+          {
+            radius: 8,
+            fillColor: "#6366f1",
+            color: "#fff",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8,
+          }
+        ).addTo(map);
+
+        const date = new Date(loc.created_at);
+        marker.bindPopup(`
+          <strong>Location ${index + 1}</strong><br>
+          Latitude: ${parseFloat(loc.latitude).toFixed(6)}<br>
+          Longitude: ${parseFloat(loc.longitude).toFixed(6)}<br>
+          Accuracy: ${parseFloat(loc.accuracy).toFixed(2)}m<br>
+          Time: ${date.toLocaleString()}
+        `);
+
+        markers.push(marker);
+      });
+
+      // Fit all markers in view
+      if (markers.length > 0) {
+        const group = new L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.1));
+      }
+    }
+
+    // Check if already logged in
+    window.addEventListener("load", () => {
+      if (localStorage.getItem("adminLoggedIn") === "true") {
+        document.getElementById("loginContainer").style.display = "none";
+        document.getElementById("mainContainer").style.display = "block";
+        loadLocations();
+      }
+    });
+
+    // Refresh locations every 5 seconds
+    setInterval(loadLocations, 5000);
+  </script>
+</body>
+</html>

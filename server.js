@@ -23,6 +23,41 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
+app.get("/locations", async (req, res) => {
+  try {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from("locations")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Supabase error:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to fetch locations.",
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: data || [],
+      });
+    } else {
+      return res.json({
+        success: true,
+        data: [],
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch locations.",
+    });
+  }
+});
+
 app.post("/location", async (req, res) => {
   const { lat, lng, accuracy, consent } = req.body;
 

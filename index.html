@@ -72,7 +72,7 @@
 
     .result{
       margin-top:20px;
-      text-align:left;
+      text-align:center;
       background:rgba(255,255,255,0.05);
       padding:15px;
       border-radius:15px;
@@ -80,6 +80,22 @@
       white-space:pre-wrap;
       line-height:1.6;
       color:#f1f5f9;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .btn-secondary {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
     }
   </style>
 </head>
@@ -102,7 +118,13 @@
     </button>
 
     <div class="result" id="result">
-      Waiting for location...
+      Click the button to share your location
+    </div>
+
+    <div class="button-group">
+      <button class="btn btn-secondary" onclick="window.location.href='locations.html'">
+        📍 View Locations
+      </button>
     </div>
 
   </div>
@@ -141,10 +163,7 @@
         console.log(data);
 
         result.innerHTML =
-          "✅ Location saved successfully\n\n" +
-          "Latitude: " + lat + "\n" +
-          "Longitude: " + lng + "\n" +
-          "Accuracy: " + accuracy + " meters";
+          "✅ Location saved successfully";
 
       })
 
