@@ -1,8 +1,16 @@
+const { createClient } = require("@supabase/supabase-js");
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 exports.handler = async (event, context) => {
   // Only allow POST requests
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ success: false, message: "Method not allowed" })
     };
   }
@@ -38,16 +46,29 @@ exports.handler = async (event, context) => {
       };
     }
 
-    const entry = {
-      lat,
-      lng,
-      accuracy,
-      timestamp: new Date().toISOString()
-    };
+    // Save to Supabase
+    const { data, error } = await supabase
+      .from("locations")
+      .insert([
+        {
+          latitude: lat,
+          longitude: lng,
+          accuracy: accuracy,
+          created_at: new Date().toISOString()
+        }
+      ]);
 
-    // For Netlify, store in a database or external service
-    // For now, just return success
-    console.log("Location received:", entry);
+    if (error) {
+      console.error("Supabase error:", error);
+      return {
+        statusCode: 500,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          success: false,
+          message: "Failed to save location to database."
+        })
+      };
+    }
 
     return {
       statusCode: 200,
@@ -55,7 +76,12 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({
         success: true,
         message: "Location saved successfully.",
-        data: entry
+        data: {
+          lat,
+          lng,
+          accuracy,
+          timestamp: new Date().toISOString()
+        }
       })
     };
   } catch (err) {

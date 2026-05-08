@@ -1,35 +1,29 @@
 const express = require("express");
 const cors = require("cors");
-const fs = require("fs");
 const path = require("path");
+const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
-app.use(express.json());
+// Initialize Supabase client
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
-const DATA_FILE = path.join(__dirname, "locations.json");
-
-function saveLocation(entry) {
-  let data = [];
-  try {
-    if (fs.existsSync(DATA_FILE)) {
-      data = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
-    }
-  } catch (err) {
-    data = [];
-  }
-
-  data.push(entry);
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+let supabase = null;
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
 }
 
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname)));
+
 app.get("/", (req, res) => {
-  res.send("Location API is running.");
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
-app.post("/location", (req, res) => {
+app.post("/location", async (req, res) => {
   const { lat, lng, accuracy, consent } = req.body;
 
   if (consent !== true) {
@@ -49,6 +43,60 @@ app.post("/location", (req, res) => {
       message: "Invalid location data.",
     });
   }
+
+  const entry = {
+    latitude: lat,
+    longitude: lng,
+    accuracy: accuracy,
+    created_at: new Date().toISOString(),
+  };
+
+  try {
+    // If Supabase is configured, use it; otherwise just return success
+    if (supabase) {
+      const { data, error } = await supabase
+        .from("locations")
+        .insert([entry]);
+
+      if (error) {
+        console.error("Supabase error:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to save location to database.",
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: "Location saved successfully.",
+        data: entry,
+      });
+    } else {
+      // Fallback: just log it
+      console.log("Location received:", entry);
+      return res.json({
+        success: true,
+        message: "Location received (database not configured).",
+        data: entry,
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to save location.",
+    });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  if (supabase) {
+    console.log("✓ Connected to Supabase");
+  } else {
+    console.log("⚠ Supabase not configured (set SUPABASE_URL and SUPABASE_ANON_KEY)");
+  }
+});
 
   const entry = {
     lat,
